@@ -527,6 +527,13 @@ MODULE MODULE_mpp_ReachLS
       if(my_id .eq. io_id) then
          do i = 1, numprocs
             if(i-1 .eq. io_id) then
+! KGD
+write (6,'(/a)') ' subroutine ReachLS_decompInt'
+write (6,'(a,2i10)') ' i-1, io_id=', i-1, io_id
+write (6,'(a,i10)') ' alinksl(i)=', alinksl(i)
+write (6,'(a,i10)') ' linkls_s(i)=', linkls_s(i)
+write (6,'(a,i10)') ' linkls_e(i)=', linkls_e(i)
+write (6,'(a,i10)') ' ubound(outV)=', ubound(outV)
                 if(alinksl(i) .gt. 0) then
                     outV(1:linkls_e(i)-linkls_s(i)+1) = inV(linkls_s(i):linkls_e(i))
                 endif
