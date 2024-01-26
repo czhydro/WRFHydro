@@ -76,6 +76,13 @@ module module_HYDRO_io
           endif
 
           ivar = nf_inq_varid(ncid,trim(var_name),  varid)
+
+write (6,'(/a)') ' VAR_DEBUG: integer function get2d_real'
+write (6,'(a)') ' AFTER nf_inq_varid call ...'
+write (6,'(a,a)') ' fileName = ', trim ( fileName )
+write (6,'(a,a)') ' var_name = ', trim ( var_name )
+write (6,'(a,i10)') ' ivar=', ivar
+
           if(ivar .ne. 0) then
              ivar = nf_inq_varid(ncid,trim(var_name//"_M"),  varid)
              if(ivar .ne. 0) then
@@ -8230,6 +8237,16 @@ integer, dimension(NLAKES)                   :: LAKELINKID !temporarily store th
 did = 1
 LAKELINKID = 0
 
+! KGD
+
+if ( my_id == 0 ) then
+write (6,'(/a)') ' subroutine read_routelink'
+write (6,'(a)') ' BEFORE call readLinkSL'
+write (6,'(a,i10)') ' nlakes=', nlakes
+write (6,'(a,i10)') ' dimension of LINKID: nlinks=', nlinks
+write (6,'(a,3i10)') ' ubound(LINKID)=', ubound(LINKID)
+end if
+
 call readLinkSL( GNLINKSL,NLINKSL,route_link_f, route_lake_f,maxorder, &
      LINKID, TO_NODE, TYPEL, ORDER , &
      QLINK,CHLON, CHLAT, ZELEV, MUSK, MUSX, CHANLEN, &
@@ -8393,28 +8410,55 @@ end subroutine read_routelink
 
        endif ! my_id .eq. IO_id
 
+! KGD
+if ( my_id == 0 ) then
+write (6,'(a)') ' subroutine readLinkSL: BEFORE LINKID'
+write (6,'(a,3i10)') ' ubound(tmpLINKID)=', ubound(tmpLINKID)
+write (6,'(a,3i10)') ' ubound(LINKID)=', ubound(LINKID)
+write (6,'(a,i10)') ' my_id=', my_id
+write (6,'(a,i10)') ' IO_id=', IO_id
+write (6,'(a,i10)') ' GNLINKSL=', GNLINKSL
+end if
+
         call ReachLS_decomp(tmpLINKID,  LINKID )
+
         call ReachLS_decomp(tmpLAKEIDA, LAKEIDA )
 
         call ReachLS_decomp(tmpTO_NODE, TO_NODE)
-        call ReachLS_decomp(tmpCHLON,    CHLON  )
-        call ReachLS_decomp(tmpCHLAT,    CHLAT  )
-        call ReachLS_decomp(tmpZELEV,    ZELEV  )
-        call ReachLS_decomp(tmpTYPEL,   TYPEL  )
-        call ReachLS_decomp(tmpORDER,   ORDER  )
-        call ReachLS_decomp(tmpQLINK(:,1), QLINK(:,1))
-        call ReachLS_decomp(tmpQLINK(:,2), QLINK(:,2))
-        call ReachLS_decomp(tmpMUSK,    MUSK   )
-        call ReachLS_decomp(tmpMUSX,     MUSX   )
-        call ReachLS_decomp(tmpCHANLEN,  CHANLEN)
-        call ReachLS_decomp(tmpMannN,    MannN  )
-        call ReachLS_decomp(tmpSo,       So     )
-        call ReachLS_decomp(tmpChSSlp,   ChSSlp )
-        call ReachLS_decomp(tmpBw,       Bw     )
-        call ReachLS_decomp(tmpTw,       Tw     )
-        call ReachLS_decomp(tmpTw_CC,    Tw_CC  )
-        call ReachLS_decomp(tmpn_CC,     n_CC   )
 
+        call ReachLS_decomp(tmpCHLON,    CHLON  )
+
+        call ReachLS_decomp(tmpCHLAT,    CHLAT  )
+
+        call ReachLS_decomp(tmpZELEV,    ZELEV  )
+
+        call ReachLS_decomp(tmpTYPEL,   TYPEL  )
+
+        call ReachLS_decomp(tmpORDER,   ORDER  )
+
+        call ReachLS_decomp(tmpQLINK(:,1), QLINK(:,1))
+
+        call ReachLS_decomp(tmpQLINK(:,2), QLINK(:,2))
+
+        call ReachLS_decomp(tmpMUSK,    MUSK   )
+
+        call ReachLS_decomp(tmpMUSX,     MUSX   )
+
+        call ReachLS_decomp(tmpCHANLEN,  CHANLEN)
+
+        call ReachLS_decomp(tmpMannN,    MannN  )
+
+        call ReachLS_decomp(tmpSo,       So     )
+
+        call ReachLS_decomp(tmpChSSlp,   ChSSlp )
+
+        call ReachLS_decomp(tmpBw,       Bw     )
+
+        call ReachLS_decomp(tmpTw,       Tw     )
+
+        call ReachLS_decomp(tmpTw_CC,    Tw_CC  )
+
+        call ReachLS_decomp(tmpn_CC,     n_CC   )
 
 !       call ReachLS_decomp(tmpHRZAREA,  HRZAREA)
 !       call ReachLS_decomp(tmpLAKEMAXH, LAKEMAXH)

@@ -60,6 +60,8 @@ endif
 
 module_NWM_io_dict: ../Data_Rec/module_namelist.o ../utils/module_version.o
 
+module_channel_routing.o: ../Data_Rec/module_global_rinfo.F  ../Data_Rec/module_rinfo_def.F
+
 module_NWM_io: module_HYDRO_utils.o \
                module_NWM_io_dict.o \
                module_HYDRO_io.o \

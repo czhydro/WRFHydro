@@ -2097,13 +2097,19 @@ subroutine output_rt_NWM(domainId,iGrid)
 
       if(fileMeta%outFlag(iTmp2) .eq. 1) then   
          !Allocate memory necessary 
-         if(myId .eq. 0) then
-            allocate(globalOutComp(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
-            allocate(globalOutReal(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
-         else
-            allocate(globalOutComp(1,1,1))
-            allocate(globalOutReal(1,1,1))
-         endif
+
+!        if(myId .eq. 0) then
+!           allocate(globalOutComp(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
+!           allocate(globalOutReal(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
+!        else
+!           allocate(globalOutComp(1,1,1))
+!           allocate(globalOutReal(1,1,1))
+!        endif
+
+!        KGD
+         allocate(globalOutComp(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
+         allocate(globalOutReal(RT_DOMAIN(domainId)%g_ixrt,numLev,RT_DOMAIN(domainId)%g_jxrt))
+
          ! Allocate local memory
          allocate(localCompTmp(RT_DOMAIN(domainId)%ixrt,RT_DOMAIN(domainId)%jxrt))
          allocate(localRealTmp(RT_DOMAIN(domainId)%ixrt,RT_DOMAIN(domainId)%jxrt))
@@ -2207,6 +2213,13 @@ subroutine output_rt_NWM(domainId,iGrid)
             call nwmCheck(diagFlag,iret,'ERROR: Unable to place data into output variable: '//trim(fileMeta%varNames(iTmp2)))
          endif
 
+         ! Sync up processes
+         if(mppFlag .eq. 1) then
+#ifdef MPP_LAND
+           call mpp_land_sync()
+#endif
+         endif
+
          ! Deallocate memory for this variable. 
          deallocate(globalOutComp)
          deallocate(localCompTmp)
@@ -2215,12 +2228,18 @@ subroutine output_rt_NWM(domainId,iGrid)
       endif
    end do
 
+   ! Sync up processes
+   if(mppFlag .eq. 1) then
+#ifdef MPP_LAND
+     call mpp_land_sync()
+#endif
+   endif
+
    if(myId .eq. 0) then
       ! Close the output file
       iret = nf90_close(ftn)
       call nwmCheck(diagFlag,iret,'ERROR: Unable to close RT_DOMAIN file.')
    endif
-
 
 end subroutine output_rt_NWM
 

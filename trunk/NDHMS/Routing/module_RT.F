@@ -81,7 +81,9 @@ CONTAINS
       NLINKS = rt_domain(did)%NLINKS
       NLAKES = rt_domain(did)%NLAKES
       NLINKSL = rt_domain(did)%NLINKSL
-     
+
+!     KGD
+
       if(NLINKSL .gt. NLINKS) then
          nsizes = nlinksl
       else
@@ -89,12 +91,31 @@ CONTAINS
 !           write(6,*) "Fatal Error: NLINKSL .gt. NLINKS .. "
 !           call hydro_stop("not solved, contact WRF-Hydro group. ")
       endif
-      rt_domain(did)%nlinksize = nsizes
 
+!       if ( my_id == 0 ) then
+write (6,'(/a)') ' subroutine rt_allocate'
+write (6,'(a,i10)') ' nlinks=', nlinks
+write (6,'(a,i10)') ' nlakes=', nlakes
+write (6,'(a,i10)') ' nlinksl=', nlinksl
+write (6,'(a,i10)') ' nsizes=', nsizes
+write (6,'(a,i10)') ' my_id=', my_id
+write (6,'(a,i10)') ' io_id=', io_id
+!       end if
+
+      rt_domain(did)%nlinksize = nsizes
 
       if(rt_domain(did)%NLINKS .eq. 0) NLINKS = 1
       if(rt_domain(did)%NLAKES .eq. 0) NLAKES = 1
       if(rt_domain(did)%NLINKSL .eq. 0) NLINKSL = 1
+
+if ( my_id == 0 ) then
+write (6,'(/a)') ' subroutine rt_allocate'
+write (6,'(a,i10)') ' final nlinks=', nlinks
+write (6,'(a,i10)') ' final nlakes=', nlakes
+write (6,'(a,i10)') ' final nlinksl=', nlinksl
+write (6,'(a,i10)') ' my_id=', my_id
+write (6,'(a,i10)') ' io_id=', io_id
+end if
 
       rt_domain(did)%iswater = 0
       rt_domain(did)%isurban = 0
@@ -643,6 +664,16 @@ integer :: i,j,k, ll, count
      integer :: cache_block, cache_block_begin_i, cache_block_end_i
      integer :: cache_idx, num_blocks, cache_idx_k, cache_block_begin_k, cache_block_end_k
 
+real :: lat1
+real :: lon1
+real :: lat2
+real :: lon2
+real :: dtemp
+logical :: ldebug
+logical, save :: first = .true.
+
+! KGD
+
 #ifdef OUTPUT_CHAN_CONN
 real :: connCalcTimeStart, connCalcTimeEnd
 #endif
@@ -724,6 +755,15 @@ if (nlst_rt(did)%SUBRTSWCRT  .eq.1 .or. &
    
    if((nlst_rt(did)%CHANRTSWCRT    .eq. 1 .or. nlst_rt(did)%CHANRTSWCRT    .eq. 2) .and. &
       (nlst_rt(did)%channel_option .eq. 1 .or. nlst_rt(did)%channel_option .eq. 2)        ) then
+!     KGD
+
+if ( my_id == 0 ) then
+write (6,'(/a)') ' subroutine LandRT_ini'
+write (6,'(a)') ' BEFORE call read_routelink'
+write (6,'(a,i10)') ' my_id=', my_id
+write (6,'(a,i10)') ' ubound(rt_domain(did)%LINKID)=', ubound(rt_domain(did)%LINKID)
+end if
+
       call read_routelink( &
            rt_domain(did)%TO_NODE,       rt_domain(did)%TYPEL,      &
            rt_domain(did)%ORDER,         rt_domain(did)%MAXORDER,   &
@@ -932,16 +972,39 @@ if(nlst_rt(did)%channel_only       .eq. 0 .and. &
    
    rt_domain(did)%overland%properties%retention_depth = 0.001   ! units (mm)  
    rt_domain(did)%RETDEP_CHAN = 0.001
+   
+!  KGD
 
+!  rt_domain(did)%overland%properties%retention_depth = 1.0e-06   ! units (mm)  
+!  rt_domain(did)%RETDEP_CHAN = 1.0e-06
 
    !DJG Need to insert call for acquiring routing fields here...
    !DJG     include as a subroutine in module module_Noahlsm_wrfcode_input.F
    !DJG  Calculate terrain slopes 'SOXRT,SOYRT' from subgrid elevation 'ELRT'
 
+!  KGD
+
    rt_domain(did)%overland%properties%water_surface_slope = -999
    Vmax = 0.0
    do j=2,rt_domain(did)%JXRT-1
       do i=2,rt_domain(did)%IXRT-1
+
+! KGD
+
+!       lat1 = rt_domain(did)%latval(i,j)
+!       lon1 = rt_domain(did)%lonval(i,j)
+!       lat2 = 31.929271
+!       lon2 = -87.04929
+!       dtemp = ds ( lat1, lon1, lat2, lon2 )
+
+ldebug = .false.
+
+!       if ( dtemp <= 1.010 ) then
+!       if ( rt_domain(did)%overland%streams_and_lakes%ch_netrt(i,j) < 0 ) then
+!       ldebug = .true.
+!       end if
+!       end if
+
          rt_domain(did)%overland%properties%surface_slope_x(i,j)=(rt_domain(did)%ELRT(i,j)-rt_domain(did)%ELRT(i+1,j))/rt_domain(did)%overland%properties%distance_to_neighbor(i,j,3)
          rt_domain(did)%overland%properties%surface_slope_y(i,j)=(rt_domain(did)%ELRT(i,j)-rt_domain(did)%ELRT(i,j+1))/rt_domain(did)%overland%properties%distance_to_neighbor(i,j,1)
          !DJG Introduce reduction in retention depth as a linear function of terrain slope
@@ -1032,14 +1095,42 @@ if(nlst_rt(did)%channel_only       .eq. 0 .and. &
          end if
          
          !DJG Introduce reduction in retention depth as a linear function of terrain slope
+
+if ( ldebug ) then
+write (6,'(/a)') ' RETENTION_DEBUG: subroutine LandRT_ini'
+write (6,'(a,2i10)') ' i,j', i, j
+write (6,'(a,f10.5)') ' dtemp=', dtemp
+write (6,'(a,5x,e12.5)') ' Vmax=', Vmax
+write (6,'(a,i10)') ' nlst_rt(did)%RT_OPTION=', nlst_rt(did)%RT_OPTION
+write (6,'(a,f15.5)') ' INITIAL rt_domain(did)%overland%properties%retention_depth(i,j)=', &
+rt_domain(did)%overland%properties%retention_depth(i,j)
+write (6,'(a,i10)') ' rt_domain(did)%overland%streams_and_lakes%ch_netrt(i,j)=', &
+rt_domain(did)%overland%streams_and_lakes%ch_netrt(i,j)
+end if
+
          if (nlst_rt(did)%RT_OPTION.eq.1) then
+
             if (Vmax.gt.0.75) then
                rt_domain(did)%overland%properties%retention_depth(i,j)=0.
+               rt_domain(did)%RETDEPFRAC=0.0
             else
                rt_domain(did)%RETDEPFRAC=Vmax/0.75
                rt_domain(did)%overland%properties%retention_depth(i,j)=rt_domain(did)%overland%properties%retention_depth(i,j)*(1.-rt_domain(did)%RETDEPFRAC)
                if (rt_domain(did)%overland%properties%retention_depth(i,j).lt.0.) rt_domain(did)%overland%properties%retention_depth(i,j)=0.
             end if
+
+if ( ldebug ) then
+write (6,'(/a)') ' RETENTION_DEBUG: subroutine LandRT_ini'
+write (6,'(a,2i10)') ' i,j', i, j
+write (6,'(a,f10.5)') ' dtemp=', dtemp
+write (6,'(a,5x,e12.5)') ' Vmax=', Vmax
+write (6,'(a,i10)') ' nlst_rt(did)%RT_OPTION=', nlst_rt(did)%RT_OPTION
+write (6,'(a,f15.5)') ' FINAL rt_domain(did)%overland%properties%retention_depth(i,j)=', &
+rt_domain(did)%overland%properties%retention_depth(i,j)
+write (6,'(a,f15.5)') ' rt_domain(did)%RETDEPFRAC=', rt_domain(did)%RETDEPFRAC
+write (6,'(a,f15.5)') ' rt_domain(did)%RETDEPRTFAC(i,j)=', rt_domain(did)%RETDEPRTFAC(i,j)
+end if
+
          end if
          
          
@@ -1057,8 +1148,14 @@ if(nlst_rt(did)%channel_only       .eq. 0 .and. &
    ! JLM: for DWJ I'm leaving this next line for you to verify as
    !      it's the one I translated to the following line,
    !where (rt_domain(did)%CH_NETRT .ge. 0) rt_domain(did)%RETDEPRT = 5.0
+
+!  NOLA
+
    where (rt_domain(did)%overland%streams_and_lakes%ch_netrt .ge. 0) &
         rt_domain(did)%overland%properties%retention_depth = 5.0
+
+!  where (rt_domain(did)%overland%streams_and_lakes%ch_netrt .ge. 0) &
+!       rt_domain(did)%overland%properties%retention_depth = 0.0
  
    ! calculate the slope for boundary        
 #ifdef MPP_LAND
@@ -1507,8 +1604,70 @@ if(nlst_rt(did)%channel_only       .eq. 0 .and. &
 end if ! end of neither channel_only nor channelBucket_only
 
 end subroutine LandRT_ini
+!
+!***********************************************************************
+!
+real function ds ( ylat1,xlon1,ylat2,xlon2 )
 
+! KGD
 
+!	This function calculates the curvilinear distance in km
+!	over the earth's surface
+
+real :: ylat1,xlon1,ylat2,xlon2
+
+integer, parameter :: double_precision  = 8
+
+real ( kind  = double_precision ) :: ylat12,xlon12,ylat22,xlon22
+real ( kind  = double_precision ) :: ylat1r,ylat2r,ylatbar
+real ( kind  = double_precision ) :: one,pi,semi,radpdeg,degprad,small
+real ( kind  = double_precision ) :: dlon,dlat,dlond,dlatd
+real ( kind  = double_precision ) :: arg1,arg2,arg
+real ( kind  = double_precision ) :: gamma,erad
+
+one = 1.0d+00
+small = 1.0d-03
+semi = 180.0d+00
+
+erad = 6370.0d+00
+pi = dacos( -one )
+radpdeg = pi/semi
+degprad = semi/pi
+
+ylat12 = ylat1
+xlon12 = xlon1
+ylat22 = ylat2
+xlon22 = xlon2
+
+dlatd = dabs( ylat12 - ylat22 )
+dlond = dabs( xlon12 - xlon22 )
+if ( dlond > 180.0d+00 ) then
+  dlond  = 360.0d+00 - dlond
+end if
+dlon = dlond*radpdeg
+ylat1r = ylat12*radpdeg
+ylat2r = ylat22*radpdeg
+
+if ( dlond > small .and. dlatd > small ) then
+  arg1 = dsin(ylat1r)*dsin(ylat2r)
+  arg2 = dcos(ylat1r)*dcos(ylat2r)*dcos(dlon)
+  arg =  arg1 + arg2
+  gamma = dacos( arg )
+  ds = erad*gamma
+else if ( dlond > small .and. dlatd <= small ) then
+  ylatbar = 0.50*( ylat1r + ylat2r )
+  ds = erad*dcos(ylatbar)*dlon
+else if ( dlond <= small .and. dlatd > small ) then
+  dlat = dlatd*radpdeg
+  ds = erad*dlat
+else if ( dlond < small .and. dlatd < small ) then
+  ds = 0.0
+end if
+
+end function
+!
+!***********************************************************************
+!
        subroutine deriveFromNode(did)
             implicit none
             integer :: did

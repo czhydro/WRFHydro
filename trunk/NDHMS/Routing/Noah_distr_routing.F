@@ -1021,6 +1021,7 @@
         use module_mpp_land, only: left_id,down_id,right_id, &
               up_id,mpp_land_com_real, my_id, mpp_land_com_real8,&
              mpp_land_sync
+      use module_RT_data, only: rt_domain ! KGD
 #endif
 
         IMPLICIT NONE
@@ -1058,8 +1059,19 @@
         INTEGER  IXX0,JYY0,index, SO8RT_D(XX,YY,3)
         REAL  tmp_gsize,hsum
 
-!!! Initialize variables
+! KGD
 
+real :: lat1
+real :: lon1
+real :: lat2
+real :: lon2
+real :: dtemp
+real :: ds2
+logical :: ldebug
+logical, save :: first = .true.
+integer, parameter :: did = 1
+
+!!! Initialize variables
 
 
 !!! Begin Routing of Excess Rainfall over the Watershed
@@ -1094,6 +1106,37 @@
                  alfax = sqrt(sfx) / dist_rough(i,j) 
                  hh=(h(i,j)-retent_dep(i,j)) * 0.001
                  hh53=hh**(5./3.)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!       lat1 = rt_domain(did)%latval(i,j)
+!       lon1 = rt_domain(did)%lonval(i,j)
+!       lat2 = 31.929271
+!       lon2 = -87.04929
+!       dtemp = ds2 ( lat1, lon1, lat2, lon2 )
+
+ldebug = .false.
+
+!       if ( dtemp <= 1.010 ) then
+!       if ( rt_domain(did)%overland%streams_and_lakes%ch_netrt(i,j) < 0 ) then
+!       ldebug = .true.
+!       end if
+!       end if
+
+if ( ldebug ) then
+write (6,'(/a)') ' RETENTION_DEBUG: SUBROUTINE ROUTE_OVERLAND1'
+write (6,'(a,2i10)') ' i,j', i, j
+write (6,'(a,f10.5)') ' dtemp=', dtemp
+write (6,'(a,f10.5)') ' lat1=', lat1
+write (6,'(a,f10.5)') ' lon1=', lon1
+write (6,'(a,f10.5)') ' lat2=', lat2
+write (6,'(a,f10.5)') ' lon2=', lon2
+write (6,'(a,f15.5)') ' retent_dep(i,j)=', retent_dep(i,j)
+write (6,'(a,f15.5)') ' h(i,j)=', h(i,j)
+write (6,'(a,f15.5)') ' hh=', hh
+end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Calculate q-flux...
                  qqsfc = alfax*hh53*dt * tmp_gsize
@@ -1179,8 +1222,69 @@
 
 !DJG ----------------------------------------------------------------------
         end subroutine ROUTE_OVERLAND1
+!
+!***********************************************************************
+!
+! KGD
+real function ds2 ( ylat1,xlon1,ylat2,xlon2 )
 
+!	This function calculates the curvilinear distance in km
+!	over the earth's surface
 
+real :: ylat1,xlon1,ylat2,xlon2
+
+integer, parameter :: double_precision  = 8
+
+real ( kind  = double_precision ) :: ylat12,xlon12,ylat22,xlon22
+real ( kind  = double_precision ) :: ylat1r,ylat2r,ylatbar
+real ( kind  = double_precision ) :: one,pi,semi,radpdeg,degprad,small
+real ( kind  = double_precision ) :: dlon,dlat,dlond,dlatd
+real ( kind  = double_precision ) :: arg1,arg2,arg
+real ( kind  = double_precision ) :: gamma,erad
+
+one = 1.0d+00
+small = 1.0d-03
+semi = 180.0d+00
+
+erad = 6370.0d+00
+pi = dacos( -one )
+radpdeg = pi/semi
+degprad = semi/pi
+
+ylat12 = ylat1
+xlon12 = xlon1
+ylat22 = ylat2
+xlon22 = xlon2
+
+dlatd = dabs( ylat12 - ylat22 )
+dlond = dabs( xlon12 - xlon22 )
+if ( dlond > 180.0d+00 ) then
+  dlond  = 360.0d+00 - dlond
+end if
+dlon = dlond*radpdeg
+ylat1r = ylat12*radpdeg
+ylat2r = ylat22*radpdeg
+
+if ( dlond > small .and. dlatd > small ) then
+  arg1 = dsin(ylat1r)*dsin(ylat2r)
+  arg2 = dcos(ylat1r)*dcos(ylat2r)*dcos(dlon)
+  arg =  arg1 + arg2
+  gamma = dacos( arg )
+  ds2 = erad*gamma
+else if ( dlond > small .and. dlatd <= small ) then
+  ylatbar = 0.50*( ylat1r + ylat2r )
+  ds2 = erad*dcos(ylatbar)*dlon
+else if ( dlond <= small .and. dlatd > small ) then
+  dlat = dlatd*radpdeg
+  ds2 = erad*dlat
+else if ( dlond < small .and. dlatd < small ) then
+  ds2 = 0.0
+end if
+
+end function
+!
+!***********************************************************************
+!
 !DJG ----------------------------------------------------------------
         SUBROUTINE GETMAX8DIR(IXX0,JYY0,I,J,H,RETENT_DEP,sox,tmp_gsize,max,XX,YY)
           implicit none

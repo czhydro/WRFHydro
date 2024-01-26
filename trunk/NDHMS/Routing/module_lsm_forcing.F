@@ -222,6 +222,9 @@ Contains
         call get_2d_netcdf("HGT_M", ncid, terrain,   units, ix, jx, .TRUE., ierr)
     endif
 
+  write (6,'(/a)') ' DEBUG_VEGTYP: subroutine readland_hrldas'
+  write (6,'(a,a)') ' geo_static_flnm = ', trim(geo_static_flnm)
+  write (6,'(a,i10)') ' solveg_initswc=', solveg_initswc
 
     if (SOLVEG_INITSWC.eq.0) then
 !      ! Get Dominant Land Use categories (use)
@@ -2244,7 +2247,9 @@ subroutine read_hydro_forcing_mpp1( &
      indir,olddate,hgrid, &
      ix,jx,forc_typ,snow_assim,  & 
      T2,q2x,u,v,pres,xlong,short,prcp1,&
-     lai,fpar,snodep,dt,k,prcp_old)
+     lai,fpar,snodep,dt,k,prcp_old, &
+     indir_aorc, use_aorc_precip )
+
 ! This subrouting is going to read different forcing.
 implicit none
 ! in variable
@@ -2253,9 +2258,14 @@ character(len=256) :: filename
 integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
 real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
      prcpnew,weasd,snodep,prcp0,prcp2,prcp_old
+
+character ( len = * ), optional, intent(in) :: indir_aorc
+logical, optional, intent(in) :: use_aorc_precip
+
 real ::  dt, wrf_dt
 ! tmp variable
 character(len=256) :: inflnm, inflnm2, product
+character ( len = 1000 ) :: inflnm_aorc
 integer  :: i,j,mmflag,ierr_flg
 real,dimension(ix,jx):: lai,fpar
 character(len=4) nwxst_t
@@ -2287,11 +2297,38 @@ if(FORC_TYP.eq.1) then
       call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
    endif
 
+!KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+   inflnm_aorc = '9999999999'
+   if ( present(indir_aorc) .and. present(use_aorc_precip) ) then
+     if ( use_aorc_precip ) then
+  
+       inflnm_aorc = trim(indir_aorc) // "." //&
+                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                ".nc4"
+   
+       inquire (file=trim(inflnm_aorc), exist=fexist)
+   
+#ifdef MPP_LAND
+   call mpp_land_bcast_logical(fexist)
+#endif
+
+       if ( .not. fexist ) then
+         print*, "no aorc precip forcing data found", inflnm_aorc
+         call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
+       endif
+
+
+     end if
+   end if
+!KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+
 #ifdef HYDRO_D
    print*, "read forcing data at ", OLDDATE,  trim(inflnm)
 #endif
+
    call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-        PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+        PRES,XLONG,SHORT,PRCP1,LAI,FPAR, &
+        use_aorc_precip, inflnm_aorc )
    
    where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
    where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
@@ -2719,8 +2756,9 @@ PRCP1 = PRCP1 * 2.0
 end subroutine read_hydro_forcing_mpp1
 
 
+  subroutine READFORC_HRLDAS_mpp(flnm,ix,jx,target_date, t,q,u,v,p,lw,sw,pcp,lai,fpar, &
+    use_aorc_precip, inflnm_aorc )
 
-  subroutine READFORC_HRLDAS_mpp(flnm,ix,jx,target_date, t,q,u,v,p,lw,sw,pcp,lai,fpar)
     implicit none
 
     character(len=*),                   intent(in)  :: flnm
@@ -2738,9 +2776,17 @@ end subroutine read_hydro_forcing_mpp1
     real,             dimension(ix,jx), intent(inout) :: lai
     real,             dimension(ix,jx), intent(inout) :: fpar
 
+    logical, optional, intent(in) :: use_aorc_precip
+    character ( len = * ), optional, intent(in) :: inflnm_aorc
+
     character(len=256) :: units
     integer :: ierr
+    integer :: ierr1
+    integer :: ierr2
+    integer :: ierr3
     integer :: ncid
+    logical :: use_aorc_precip_local
+    integer :: ncid2
 
     ! Open the NetCDF file.
 #ifdef MPP_LAND
@@ -2774,8 +2820,46 @@ end subroutine read_hydro_forcing_mpp1
     call decompose_data_real (buf2,lw)
     if(my_id .eq. io_id ) call get_2d_netcdf("SWDOWN", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,sw)
-    if(my_id .eq. io_id ) call get_2d_netcdf("RAINRATE", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
+
+    use_aorc_precip_local = .false.
+
+    if ( present(use_aorc_precip) .and. present(inflnm_aorc) ) then
+      if ( use_aorc_precip ) then
+        use_aorc_precip_local = .true.
+      end if
+    end if
+
+    if ( my_id == io_id .and. .not.use_aorc_precip_local ) then
+      call get_2d_netcdf("RAINRATE", ncid, buf2, units, global_nx, global_ny, .TRUE., ierr2)
+    else if ( my_id == io_id .and. use_aorc_precip_local ) then
+      ierr1 = nf_open ( trim(inflnm_aorc), NF_NOWRITE, ncid2 )
+      call get_2d_netcdf("RAINRATE", ncid2, buf2, units, global_nx, global_ny, .TRUE., ierr2)
+      ierr3 = nf_close ( ncid2 )
+    end if
+
+    if ( .not.use_aorc_precip_local ) then
+      call mpp_land_bcast_int1(ierr2)
+      if ( ierr2 /= 0 ) then
+         write(*,'("READFORC Problem reading netcdf file: ''", A, "''")') trim(flnm)
+         call hydro_stop("In READFORC_HRLDAS_mpp() - Problem reading netcdf file")
+      endif
+    else if ( use_aorc_precip_local ) then
+      call mpp_land_bcast_int1(ierr1)
+      if ( ierr1 /= 0 ) then
+         write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(inflnm_aorc)
+         call hydro_stop("In READFORC_HRLDAS_mpp() - Problem opening netcdf file")
+      endif
+      call mpp_land_bcast_int1(ierr2)
+      if ( ierr2 /= 0 ) then
+         write(*,'("READFORC Problem reading netcdf file: ''", A, "''")') trim(inflnm_aorc)
+         call hydro_stop("In READFORC_HRLDAS_mpp() - Problem reading netcdf file")
+      endif
+      write (6,'(/a)') ' subroutine READFORC_HRLDAS_mpp'
+      write (6,'(a,a,a)') ' AORC file ', trim(inflnm_aorc), ' READ'
+    end if
+
     call decompose_data_real (buf2,pcp)
+
     if(my_id .eq. io_id ) then 
           call get_2d_netcdf("VEGFRA", ncid,buf2, units, global_nx, global_ny, .FALSE., ierr)
           if (ierr == 0) then

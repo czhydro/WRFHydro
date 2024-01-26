@@ -141,9 +141,20 @@ subroutine overland_properties_init(this,ix,jx)
     ! allocate retention depth
     if ( .not. allocated(this%retention_depth) ) then
         allocate( this%retention_depth(ix,jx) )
+
+!       KGD
         this%retention_depth = 0.001   ! units (mm)
+!       this%retention_depth = 1.0e-06   ! units (mm)
+
+!       write (6,'(/a)') ' DEBUGZ: subroutine overland_properties_init'
+!       write (6,'(a)') ' this%retention_depth ALLOCATED and set to .001'
+
     else
         allocation_error = .true.
+
+!       write (6,'(/a)') ' DEBUGZ: subroutine overland_properties_init'
+!       write (6,'(a)') ' this%retention_depth NOT ALLOCATED'
+
     end if
 
     ! allocate dist
