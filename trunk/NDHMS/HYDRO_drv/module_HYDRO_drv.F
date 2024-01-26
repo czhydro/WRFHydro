@@ -39,7 +39,9 @@ module module_HYDRO_drv
    use module_gw_gw2d
    use module_gw_gw2d_data, only: gw2d
    use module_channel_routing, only: drive_channel, drive_channel_rsl
+
    use module_namelist, only: nlst_rt, read_rt_nlst
+
    use module_routing, only: getChanDim, landrt_ini
    use module_HYDRO_utils
 !   use module_namelist
@@ -755,6 +757,7 @@ end if
 !          call HYDRO_out(did)
 !yw  endif
            call HYDRO_time_adv(did)
+           call mpp_land_bcast_char(16,nlst_rt(did)%olddate(1:16)) ! KGD
            call HYDRO_out(did, 1)
 
 
@@ -996,8 +999,18 @@ else
        rt_domain(did)%CH_LNKRT_SL,   &
        nlst_rt(did)%GwBaseSwCRT, gw2d(did)%ho, gw2d(did)%qgw_chanrt, &
        nlst_rt(did)%gwChanCondSw, nlst_rt(did)%gwChanCondConstIn, &
-       nlst_rt(did)%gwChanCondConstOut,rt_domain(did)%velocity &
+       nlst_rt(did)%gwChanCondConstOut,rt_domain(did)%velocity, &
+       nlst_rt(did)%olddate, & ! KGD
+       nlst_rt(did)%do_res_calc, & ! KGD
+       nlst_rt(did)%debug_dname, & ! KGD
+       nlst_rt(did)%use_with_data, & ! KGD
+       nlst_rt(did)%fname_with_data, & ! KGD
+       nlst_rt(did)%nyr_base, & ! KGD
+       nlst_rt(did)%nmo_base, & ! KGD
+       nlst_rt(did)%ndy_base, & ! KGD
+       nlst_rt(did)%nhr_base  & ! KGD
        )
+
 endif
     
     if((nlst_rt(did)%gwBaseSwCRT == 3) .and. (nlst_rt(did)%gwChanCondSw .eq. 1)) then
