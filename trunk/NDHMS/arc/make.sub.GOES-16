@@ -1,0 +1,81 @@
+#
+#	FORTRAN = pgf90
+
+FORTRAN = mpif90
+#
+#	FFLAGS = -O2 -byteswapio -Mextend -Mrecursive -Mbounds -g77libs
+#	FFLAGS = -O2 -byteswapio -Mextend -Mrecursive -Mbounds -Mchkfpstk
+#	FFLAGS = -O2 -byteswapio -Mextend -Mrecursive -Mbounds
+#	FFLAGS = -O2 -g -byteswapio -Mextend -Mrecursive
+#	FFLAGS = -O2 -byteswapio -Mextend -Mrecursive
+#	FFLAGS = -fast -byteswapio -Mextend -Mrecursive
+#	FFLAGS = -fast -byteswapio -Mrecursive -Mfree -tp=x64 -Kieee
+#
+FFLAGS = -fast -byteswapio -Mrecursive -Mfree -tp=p7 -Kieee
+#	FFLAGS = -O2 -byteswapio -Mrecursive -Mfree -tp=p7 -Kieee
+#
+#	FFLAGS = -fast -byteswapio -Mrecursive -Mfree -tp=p7 -Kieee
+#	FFLAGS = -fast -byteswapio -Mrecursive -Mfree -tp=x64 -Kieee -Ktrap=denorm,unf,inexact,inv
+#	FFLAGS = -fast -byteswapio -Mrecursive -Mfree -tp=x64 -Kieee -Ktrap=inv
+#	FFLAGS = -fast -byteswapio -Mrecursive -Mfree
+#	FFLAGS = -O2 -byteswapio -Mextend -Mrecursive -Mbounds -Mchkfpstk
+#	FFLAGS = -g -O0 -byteswapio -Mrecursive -Mbounds -Mchkfpstk -Mfree -tp=x64 -Kieee -Ktrap=denorm,unf,inexact,inv
+#	FFLAGS = -g -O0 -Mrecursive -Mbounds -Mchkfpstk -Mfree -tp=p7 -Kieee
+#	FFLAGS = -g -O0 -byteswapio -Mextend -Mrecursive -Mbounds -Mchkfpstk -Mfree -tp=p7 -Kieee
+#
+LD_FFLAGS1 =
+#	LD_FFLAGS1 = -L${PATH_PGI}/liblf
+#	LD_FFLAGS2 =
+#
+
+#	LD_FFLAGS1 = -I/usr/include/freetype2 -L${PATH_PGI}/liblf -L${PATH_NCARG}/lib -L/usr/X11R6/lib -L/usr/local/lib -L/usr/lib64
+#	LD_FFLAGS2 = -lncarg -lncarg_gks -lncarg_c -lX11 -lm -lcairo -lfreetype
+
+#
+#	LD_HDF_FFLAGS1 = -I${PATH_HDF}/lib -I${PATH_HDF}/include -I${PATH_HDF5}/include
+#	LD_HDF_FFLAGS2 = -L${PATH_HDF}/lib -L${LD_LIBRARY_PATH} ${PATH_MPICH}/lib/libmpich.a -L${PATH_HDF5}/lib
+#	LD_HDF_FFLAGS3 = -L${PATH_HDF}/lib -lhdf5_fortran -lhdf5 -lz -lm
+#
+ 
+#	LD_NETCDF_FFLAGS1 = -I${PATH_NETCDF}/lib -I${PATH_NETCDF}/include -R${PATH_NETCDF}/lib
+#	LD_NETCDF_FFLAGS2 = -L${PATH_NETCDF}/lib -lnetcdff -lnetcdf
+ 
+LD_NETCDF_FFLAGS1 =
+
+#	-L/common/pkgs/netcdf/v4.4-f4.4.4-cxx4.2_mpi-pgi16.3_gcc_EL7/lib -lnetcdff -lnetcdf -lnetcdf \
+#	-L/common/pkgs/netcdf/v4.4-f4.4.4-cxx4.2_mpi-pgi16.3_gcc_EL7/lib -lpnetcdf \
+#	-L/common/pkgs/hdf5/v1.8.17_mpi-pgi16.3_gcc_EL7/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran -ldl -lz \
+#	-L/common/pkgs/mpich2/3.2-pgi16.3-gcc/lib -lmpifort -lmpi -lmpicxx \
+#	-L/common/pkgs/pgi/linux86-64/16.3/lib -lm -lpthread -lrt
+
+LD_NETCDF_FFLAGS2 =
+
+# -lhdf5_hl -lhdf5 -lpnetcdf -lz -lcurl -ldl -lm
+
+#
+#
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# targets
+
+diak.out: ${OBJECTS}
+	${FORTRAN} ${FFLAGS} -o $@ ${OBJECTS} ${LD_FFLAGS1} ${LD_FFLAGS2} \
+                                              ${LD_HDF_FFLAGS1} ${LD_HDF_FFLAGS2} ${LD_HDF_FFLAGS3} \
+                                              ${LD_NETCDF_FFLAGS1} ${LD_NETCDF_FFLAGS2}
+diak.out:
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# suffix rules
+
+.SUFFIXES: .f90 .o .mod
+
+.f90.o:
+	${FORTRAN} ${FFLAGS} ${LD_HDF_FFLAGS1} ${LD_NETCDF_FFLAGS1} -c $<
+
+.f90.mod:
+	${FORTRAN} ${FFLAGS} ${LD_HDF_FFLAGS1} ${LD_NETCDF_FFLAGS1} -c $<
+
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#ENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDENDEND
+#
