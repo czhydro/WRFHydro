@@ -6,6 +6,10 @@
 include ../macros
 
 OBJS = \
+        module_rinfo_def.o \
+        module_winfo_def.o \
+        module_global_rinfo.o \
+        module_global_winfo.o \
 	module_namelist.o \
 	module_RT_data.o \
 	module_gw_gw2d_data.o

@@ -63,6 +63,19 @@
           integer :: rtFlag
           integer ::khour
 
+!         KGD
+
+          logical :: do_res_calc
+          character ( len = 256 ) :: fname_rule_curve = '9999999999'
+          character ( len = 256 ) :: debug_dname = '9999999999'
+          logical :: use_with_data
+          character ( len = 256 ) :: fname_with_data = '9999999999'
+
+          integer :: nyr_base
+          integer :: nmo_base
+          integer :: ndy_base
+          integer :: nhr_base
+
 !#ifdef WRF_HYDRO_NUDGING
        character(len=256) :: nudgingParamFile
        character(len=256) :: netwkReExFile
@@ -81,4 +94,3 @@
 
 
    END TYPE namelist_rt_field 
-

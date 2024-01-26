@@ -110,18 +110,12 @@ CONTAINS
 #endif 
 
 !      KGD
-
        logical :: do_res_calc = .false.
        character( len = 256 ) :: fname_rule_curve = '9999999999'
        character( len = 256 ) :: debug_dname = '9999999999'
 
        logical :: use_with_data = .false.
        character( len = 256 ) :: fname_with_data = '9999999999'
-
-       integer :: nyr_base = -9999
-       integer :: nmo_base = -9999
-       integer :: ndy_base = -9999
-       integer :: nhr_base = -9999
 
        namelist /HYDRO_nlist/ NSOIL, ZSOIL8,&
             RESTART_FILE,SPLIT_OUTPUT_COUNT,IGRID,&
@@ -143,8 +137,7 @@ CONTAINS
                     io_config_outputs, io_form_outputs, hydrotbl_f, t0OutputFlag, &
                     output_channelBucket_influx, &
                     do_res_calc, fname_rule_curve, debug_dname, & ! KGD
-                    use_with_data, fname_with_data,             & ! KGD
-                    nyr_base, nmo_base, ndy_base, nhr_base
+                    use_with_data, fname_with_data                ! KGD
       
 #ifdef WRF_HYDRO_NUDGING
    namelist /NUDGING_nlist/ nudgingParamFile,       netwkReExFile,          &
@@ -542,10 +535,6 @@ CONTAINS
   call mpp_land_bcast_char( 256, debug_dname )
   call mpp_land_bcast_log1 ( use_with_data )
   call mpp_land_bcast_char( 256, fname_with_data )
-  call mpp_land_bcast_int1(nyr_base)
-  call mpp_land_bcast_int1(nmo_base)
-  call mpp_land_bcast_int1(ndy_base)
-  call mpp_land_bcast_int1(nhr_base)
 #endif
 
 nlst%do_res_calc = do_res_calc
@@ -554,11 +543,6 @@ nlst%debug_dname = debug_dname
 
 nlst%use_with_data = use_with_data
 nlst%fname_with_data = fname_with_data
-
-nlst%nyr_base = nyr_base
-nlst%nmo_base = nmo_base
-nlst%ndy_base = ndy_base
-nlst%nhr_base = nhr_base
 
 #ifdef MPP_LAND
 if ( do_res_calc ) then
@@ -2206,13 +2190,13 @@ do nr = 1, nrmax
     end if
     dname(nc:nc) = achar(rinfo%dname_int(nr,nc))
   end do
-  !write (lulog,'(/a)') ' DAM REVIEW: subroutine read_reservoir_info_driver'
-  !write (lulog,'(a,i10)') ' nr=', nr
-  !write (lulog,'(a,i10)') ' nrmax=', nrmax
-  !write (lulog,'(a,a)') ' dname = ', trim ( dname )
-  !write (lulog,'(a,f15.5)') ' rinfo%dlat(nr)=', rinfo%dlat(nr)
-  !write (lulog,'(a,f15.5)') ' rinfo%dlon(nr)=', rinfo%dlon(nr)
-  !write (lulog,'(a,i10)') ' rinfo%res_lake_index(nr)=', rinfo%res_lake_index(nr)
+  write (lulog,'(/a)') ' DAM REVIEW: subroutine read_reservoir_info_driver'
+  write (lulog,'(a,i10)') ' nr=', nr
+  write (lulog,'(a,i10)') ' nrmax=', nrmax
+  write (lulog,'(a,a)') ' dname = ', trim ( dname )
+  write (lulog,'(a,f15.5)') ' rinfo%dlat(nr)=', rinfo%dlat(nr)
+  write (lulog,'(a,f15.5)') ' rinfo%dlon(nr)=', rinfo%dlon(nr)
+  write (lulog,'(a,i10)') ' rinfo%res_lake_index(nr)=', rinfo%res_lake_index(nr)
   call flush ( lulog )
 end do
 
