@@ -46,7 +46,8 @@ cd ../..
 ln -sf Land_models/NoahMP LandModel
 cat macros LandModel/hydro/user_build_options.bak  > LandModel/user_build_options
 ln -sf CPL/NoahMP_cpl LandModel_cpl
-make clean; rm -f Run/wrf_hydro_NoahMP.exe ; rm -f Run/*TBL ; rm -f Run/*namelist*
+## make clean; rm -f Run/wrf_hydro_NoahMP.exe ; rm -f Run/*TBL ; rm -f Run/*namelist*
+make clean; rm -f Run/wrf_hydro_NoahMP.exe
 
 make
 
@@ -64,8 +65,8 @@ fi
 cd Run
 mv  wrf_hydro.exe wrf_hydro_NoahMP.exe; ln -sf wrf_hydro_NoahMP.exe wrf_hydro.exe
 
-cp ../template/NoahMP/namelist.hrldas .
-cp ../template/HYDRO/hydro.namelist .
+##	cp ../template/NoahMP/namelist.hrldas .
+##	cp ../template/HYDRO/hydro.namelist .
 
 if [ "$(cat ../.nwm_version)" == "none" ]; then
     # if it is not an nwm version, use the stock ones.
