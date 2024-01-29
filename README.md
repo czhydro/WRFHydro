@@ -36,3 +36,9 @@ Funding support for the development and application of the WRF-Hydro system has 
 - National Aeronautics and Space Administration (NASA)
 
  
+## UAH Changes
+The UAH repository of the model includes two significant updates to the model:
+ - A rule-curve based reservoir routing
+ - Anthropogenic withdrawal (withdrawals from irrigation, municipalities etc.) at HUC12 level
+
+Sample rule-curve and withdrawal files are provided. The rule curve files contains the reservoir location information in addition to the specified rule-curves and area-capacity data. All elevation data are in meters and volume is in million of cubic meter. Withdrawal files are expressed as mean monthly withdrawals in cubic meter/sec at HUC12 level. Mean withdrawal value can change for each month based on usage. 
