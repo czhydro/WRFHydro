@@ -5,12 +5,10 @@
 [![DOI](.github/badges/doi.svg)](https://ezid.cdlib.org/id/doi:10.5065/D6J38RBJ)
 
 ## Description
-This is the code repository for [WRF-Hydro](https://ral.ucar.edu/projects/wrf_hydro).
+This is the code repository for [WRF-Hydro](https://ral.ucar.edu/projects/wrf_hydro). 
 
-WRF-Hydro is a community modeling system and framework for hydrologic modeling and model coupling.  In 2016 a configuration of WRF-Hydro was implemented as the [National Water Model](http://water.noaa.gov/about/nwm) (NWM) for the continental United States.
+WRF-Hydro is a community modeling system and framework for hydrologic modeling and model coupling.  In 2016 a configuration of WRF-Hydro was implemented as the [National Water Model](http://water.noaa.gov/about/nwm) (NWM) for the continental United States. Documentation can be found on our [project website](https://ral.ucar.edu/projects/wrf_hydro/technical-description-user-guide).
 
-## Documentation
-Documentation can be found on our [project website](https://ral.ucar.edu/projects/wrf_hydro/technical-description-user-guide).
 
 ## UAH Changes
 The UAH repository of the model includes two significant updates to the model:
@@ -19,4 +17,4 @@ The UAH repository of the model includes two significant updates to the model:
 
 Sample rule-curve and withdrawal files are provided. The rule curve files contains the reservoir location information in addition to the specified rule-curves and area-capacity data. All elevation data are in meters and volume is in million of cubic meter. Withdrawal files are expressed as mean monthly withdrawals in cubic meter/sec at HUC12 level. Mean withdrawal value can change for each month based on usage. 
 
-![screenshot](/MartinDam.PNG)
+<img src="/MartinDam.PNG" width =="50">
