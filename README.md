@@ -19,4 +19,4 @@ The UAH repository of the model includes two significant updates to the model:
 
 Sample rule-curve and withdrawal files are provided. The rule curve files contains the reservoir location information in addition to the specified rule-curves and area-capacity data. All elevation data are in meters and volume is in million of cubic meter. Withdrawal files are expressed as mean monthly withdrawals in cubic meter/sec at HUC12 level. Mean withdrawal value can change for each month based on usage. 
 
-/MartinDam.png
+![screenshot](/MartinDam.PNG)
